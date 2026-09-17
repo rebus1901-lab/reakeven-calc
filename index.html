@@ -312,7 +312,25 @@ function drawChart(rows, beQuarter){
   svg.innerHTML = s;
 }
 
-Object.values(els).forEach(el => el.addEventListener('input', compute));
+const STORAGE_KEY = 'breakeven-calc-state';
+
+function saveState(){
+  const state = {};
+  Object.entries(els).forEach(([k, el]) => state[k] = el.value);
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+function restoreState(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    const state = JSON.parse(raw);
+    Object.entries(state).forEach(([k, v]) => { if(els[k]) els[k].value = v; });
+  } catch(e) {}
+}
+
+restoreState();
+Object.values(els).forEach(el => el.addEventListener('input', () => { compute(); saveState(); }));
 compute();
 </script>
 </body>
