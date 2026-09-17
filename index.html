@@ -41,6 +41,8 @@ h2{font-family:"Unbounded",sans-serif; font-weight:500; font-size:19px; margin:0
 .field label .val{font-family:"JetBrains Mono",monospace; color:var(--accent); font-weight:700; font-size:13px}
 .field .hint{font-size:12px; color:var(--muted); margin-top:4px}
 input[type=range]{width:100%; accent-color:var(--accent); cursor:pointer}
+.reset-btn{margin-top:8px; width:100%; padding:10px; background:transparent; border:1px solid var(--accent); color:var(--accent); border-radius:8px; cursor:pointer; font-size:14px}
+.reset-btn:hover{background:var(--accent); color:#fff}
 input[type=number]{
   width:100%; background:var(--bg); border:1px solid var(--line); border-radius:8px;
   padding:8px 10px; color:var(--ink); font-family:"JetBrains Mono",monospace; font-size:13.5px;
@@ -140,6 +142,7 @@ svg{width:100%; height:auto; display:block}
         <label>Горизонт, кварталов <span class="val" id="v-quarters">8</span></label>
         <input type="range" id="quarters" min="2" max="16" step="1" value="8">
       </div>
+      <button type="button" id="reset-btn" class="reset-btn">Сбросить настройки</button>
     </div>
 
     <div>
@@ -332,6 +335,12 @@ function restoreState(){
 restoreState();
 Object.values(els).forEach(el => el.addEventListener('input', () => { compute(); saveState(); }));
 compute();
+
+document.getElementById('reset-btn').addEventListener('click', () => {
+  Object.values(els).forEach(el => el.value = el.defaultValue);
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+  compute();
+});
 </script>
 </body>
 </html>
