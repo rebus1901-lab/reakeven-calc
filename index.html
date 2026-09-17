@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Break-even: аудиокнижный каталог</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#F5F4EF; --surface:#FFFFFF; --ink:#23252B; --muted:#6B6E76;
+  --accent:#5457A8; --accent-soft:#EDEDF8; --good:#2E7D4F; --good-soft:#E9F3EC;
+  --bad:#B3402F; --bad-soft:#F8ECE9; --line:#E3E1D8; --mono-bg:#23252B; --mono-ink:#E8E7E1;
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#17181D; --surface:#1F2129; --ink:#E8E7E1; --muted:#9A9CA6;
+    --accent:#9498EA; --accent-soft:#26283B; --good:#6FBF8F; --good-soft:#1E2B23;
+    --bad:#E08573; --bad-soft:#332019; --line:#2E3038; --mono-bg:#111217; --mono-ink:#D8D7D0;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#17181D; --surface:#1F2129; --ink:#E8E7E1; --muted:#9A9CA6;
+  --accent:#9498EA; --accent-soft:#26283B; --good:#6FBF8F; --good-soft:#1E2B23;
+  --bad:#E08573; --bad-soft:#332019; --line:#2E3038; --mono-bg:#111217; --mono-ink:#D8D7D0;
+}
+*{box-sizing:border-box}
+body{margin:0; background:var(--bg); color:var(--ink); font-family:"Golos Text",-apple-system,"Segoe UI",Roboto,sans-serif; font-size:16px; line-height:1.55}
+.wrap{max-width:920px; margin:0 auto; padding:40px 24px 80px}
+h1{font-family:"Unbounded",sans-serif; font-weight:700; font-size:clamp(24px,4vw,34px); margin:0 0 8px; letter-spacing:-.01em}
+.lede{color:var(--muted); max-width:64ch; margin:0 0 30px; font-size:15px}
+h2{font-family:"Unbounded",sans-serif; font-weight:500; font-size:19px; margin:0 0 14px}
+.eyebrow{font-family:"JetBrains Mono",monospace; font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-bottom:10px}
+
+.grid{display:grid; grid-template-columns:340px 1fr; gap:24px}
+@media (max-width:760px){.grid{grid-template-columns:1fr}}
+
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:22px 22px 8px}
+.field{margin-bottom:20px}
+.field label{display:flex; justify-content:space-between; align-items:baseline; font-size:13.5px; font-weight:600; margin-bottom:6px}
+.field label .val{font-family:"JetBrains Mono",monospace; color:var(--accent); font-weight:700; font-size:13px}
+.field .hint{font-size:12px; color:var(--muted); margin-top:4px}
+input[type=range]{width:100%; accent-color:var(--accent); cursor:pointer}
+input[type=number]{
+  width:100%; background:var(--bg); border:1px solid var(--line); border-radius:8px;
+  padding:8px 10px; color:var(--ink); font-family:"JetBrains Mono",monospace; font-size:13.5px;
+}
+
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:20px}
+.stat{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px 18px}
+.stat .k{font-family:"JetBrains Mono",monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:6px}
+.stat .v{font-family:"JetBrains Mono",monospace; font-size:20px; font-weight:700}
+.stat .v.good{color:var(--good)}
+.stat .v.bad{color:var(--bad)}
+.stat .sub{font-size:12px; color:var(--muted); margin-top:4px}
+
+.chartbox{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:20px 20px 10px; margin-bottom:20px}
+svg{width:100%; height:auto; display:block}
+.bar-cost{fill:var(--bad); opacity:.55}
+.bar-rev{fill:var(--accent)}
+.axis{stroke:var(--line); stroke-width:1}
+.axtext{font-family:"JetBrains Mono",monospace; font-size:10.5px; fill:var(--muted)}
+.be-line{stroke:var(--good); stroke-width:2; stroke-dasharray:4 3}
+.be-label{font-family:"JetBrains Mono",monospace; font-size:11px; fill:var(--good); font-weight:700}
+
+.note{font-size:13px; color:var(--muted); max-width:70ch; margin:0 0 24px}
+.legend{display:flex; gap:18px; font-size:12.5px; color:var(--muted); margin-bottom:6px}
+.legend span{display:flex; align-items:center; gap:6px}
+.legend i{width:10px; height:10px; border-radius:3px; display:inline-block}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Unit-экономика · аудиокнижный каталог</div>
+  <h1>Когда каталог окупится</h1>
+  <p class="lede">Модель по логике §9 регламента (длинный хвост, накопительный каталог): каждый квартал производится N новых тайтлов, а зарабатывают все выпущенные тайтлы одновременно — доход растёт вместе с размером каталога. Двигай ползунки под свои реальные цифры.</p>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Вводные</h2>
+      <div class="field" style="border:1px solid var(--line); border-radius:10px; padding:12px 14px; background:var(--bg)">
+        <div style="font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:10px">Твой лимит по времени</div>
+        <div class="field" style="margin-bottom:14px">
+          <label>Часы на проект / квартал <span class="val" id="v-hours">255</span></label>
+          <input type="range" id="hours" min="20" max="600" step="5" value="255">
+          <div class="hint">будни вечером + выходные, суммарно за квартал</div>
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>QC-время на тайтл, мин <span class="val" id="v-qc">20</span></label>
+          <input type="range" id="qc" min="5" max="130" step="5" value="20">
+          <div class="hint">Ваша работа — точечный спот-чек + текст/обложка/метаданные. 130 мин ≈ полное прослушивание вручную</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Твой темп, тайтлов/квартал <span class="val" id="v-rate">50</span></label>
+        <input type="range" id="rate" min="5" max="1200" step="5" value="50">
+        <div class="hint" id="cap-hint">лимит по времени: —</div>
+      </div>
+      <div class="field" style="border:1px solid var(--line); border-radius:10px; padding:12px 14px; background:var(--bg)">
+        <div style="font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:10px">Себестоимость тайтла — по компонентам</div>
+        <div class="field" style="margin-bottom:14px">
+          <label>Хронометраж, мин <span class="val" id="v-dur">105</span></label>
+          <input type="range" id="dur" min="20" max="240" step="5" value="105">
+          <div class="hint">1ч45м из отчёта в документе — ориентир §9</div>
+        </div>
+        <div class="field" style="margin-bottom:14px">
+          <label>TTS, ₽/мин <span class="val" id="v-tts">0.25</span></label>
+          <input type="range" id="tts" min="0" max="20" step="0.05" value="0.25">
+          <div class="hint">проверь реальную конверсию кредитов именно на движке, которым озвучиваешь</div>
+        </div>
+        <div class="field" style="margin-bottom:14px">
+          <label>Текст, ₽/тайтл <span class="val" id="v-text">0</span></label>
+          <input type="range" id="text" min="0" max="2000" step="10" value="0">
+          <div class="hint">своя генерация — можно оставить 0</div>
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>Обложка, ₽/тайтл <span class="val" id="v-cover">0</span></label>
+          <input type="range" id="cover" min="0" max="1000" step="5" value="0">
+          <div class="hint">своя генерация — можно оставить 0</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Итого себестоимость тайтла, ₽ <span class="val" id="v-cost">26</span></label>
+        <div class="hint">= хронометраж × TTS/мин + текст + обложка (пересчитывается автоматически)</div>
+      </div>
+      <div class="field">
+        <label>Прослушиваний / тайтл / квартал <span class="val" id="v-listens">1000</span></label>
+        <input type="range" id="listens" min="100" max="5000" step="100" value="1000">
+      </div>
+      <div class="field">
+        <label>RPM, ₽ за 1000 <span class="val" id="v-rpm">1270</span></label>
+        <input type="range" id="rpm" min="300" max="1500" step="10" value="1270">
+        <div class="hint">из отчёта в документе: 1100–1450, среднее ~1270</div>
+      </div>
+      <div class="field">
+        <label>Твоя доля, % <span class="val" id="v-share">60</span></label>
+        <input type="range" id="share" min="10" max="100" step="1" value="60">
+      </div>
+      <div class="field">
+        <label>Горизонт, кварталов <span class="val" id="v-quarters">8</span></label>
+        <input type="range" id="quarters" min="2" max="16" step="1" value="8">
+      </div>
+    </div>
+
+    <div>
+      <div class="stats">
+        <div class="stat"><div class="k">Макс. темп по времени</div><div class="v" id="s-capacity">—</div><div class="sub">тайтлов/квартал</div></div>
+        <div class="stat"><div class="k">Break-even</div><div class="v" id="s-be">—</div><div class="sub" id="s-be-sub"></div></div>
+        <div class="stat"><div class="k">Каталог к концу горизонта</div><div class="v" id="s-catalog">—</div><div class="sub">тайтлов</div></div>
+        <div class="stat"><div class="k">Доход, посл. квартал</div><div class="v good" id="s-rev-last">—</div><div class="sub">твоя доля</div></div>
+        <div class="stat"><div class="k">Прибыль накоплено</div><div class="v" id="s-profit">—</div><div class="sub" id="s-profit-sub"></div></div>
+      </div>
+
+      <div class="chartbox">
+        <div class="legend">
+          <span><i style="background:var(--bad); opacity:.55"></i> затраты на производство (за квартал)</span>
+          <span><i style="background:var(--accent)"></i> доход, твоя доля (за квартал)</span>
+        </div>
+        <svg id="chart" viewBox="0 0 640 260" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+
+      <p class="note">Расчёт: доход квартала = (накопленный каталог тайтлов) × (прослушиваний/тайтл) × RPM/1000 × доля%. Затраты квартала = (новых тайтлов) × себестоимость. Прибыль — нарастающим итогом. Break-even — квартал, когда суммарный доход впервые превышает суммарные затраты. Модель консервативна: не учитывает рост RPM со временем, отток аудитории и продажи на других DSP (Spotify/Apple, §9) сверху.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const els = {
+  rate: document.getElementById('rate'),
+  hours: document.getElementById('hours'),
+  qc: document.getElementById('qc'),
+  dur: document.getElementById('dur'),
+  tts: document.getElementById('tts'),
+  text: document.getElementById('text'),
+  cover: document.getElementById('cover'),
+  listens: document.getElementById('listens'),
+  rpm: document.getElementById('rpm'),
+  share: document.getElementById('share'),
+  quarters: document.getElementById('quarters'),
+};
+const vals = {
+  rate: document.getElementById('v-rate'),
+  hours: document.getElementById('v-hours'),
+  qc: document.getElementById('v-qc'),
+  dur: document.getElementById('v-dur'),
+  tts: document.getElementById('v-tts'),
+  text: document.getElementById('v-text'),
+  cover: document.getElementById('v-cover'),
+  cost: document.getElementById('v-cost'),
+  listens: document.getElementById('v-listens'),
+  rpm: document.getElementById('v-rpm'),
+  share: document.getElementById('v-share'),
+  quarters: document.getElementById('v-quarters'),
+};
+
+function fmt(n){
+  return Math.round(n).toLocaleString('ru-RU');
+}
+
+function compute(){
+  const rate = +els.rate.value;
+  const hours = +els.hours.value;
+  const qcMin = +els.qc.value;
+  const dur = +els.dur.value;
+  const tts = +els.tts.value;
+  const textCost = +els.text.value;
+  const coverCost = +els.cover.value;
+  const cost = dur*tts + textCost + coverCost;
+  const listens = +els.listens.value;
+  const rpm = +els.rpm.value;
+  const share = +els.share.value / 100;
+  const Q = +els.quarters.value;
+
+  const capacity = Math.floor((hours*60)/qcMin);
+
+  vals.rate.textContent = rate;
+  vals.hours.textContent = hours;
+  vals.qc.textContent = qcMin;
+  vals.dur.textContent = dur;
+  vals.tts.textContent = tts.toFixed(2);
+  vals.text.textContent = fmt(textCost);
+  vals.cover.textContent = fmt(coverCost);
+  vals.cost.textContent = cost < 100 ? cost.toFixed(1) : fmt(cost);
+  vals.listens.textContent = fmt(listens);
+
+  const capEl = document.getElementById('s-capacity');
+  capEl.textContent = fmt(capacity);
+  capEl.className = 'v ' + (rate > capacity ? 'bad' : 'good');
+  const capHint = document.getElementById('cap-hint');
+  if(rate > capacity){
+    capHint.innerHTML = `лимит по времени: <b style="color:var(--bad)">${fmt(capacity)}</b> — темп выше твоих возможностей QC`;
+  } else {
+    capHint.innerHTML = `лимит по времени: <b style="color:var(--good)">${fmt(capacity)}</b> — укладываешься с запасом ${fmt(capacity-rate)}`;
+  }
+  vals.rpm.textContent = fmt(rpm);
+  vals.share.textContent = share*100;
+  vals.quarters.textContent = Q;
+
+  let catalog = 0, cumRev = 0, cumCost = 0, beQuarter = null;
+  const rows = [];
+  for(let q=1; q<=Q; q++){
+    catalog += rate;
+    const qCost = rate * cost;
+    const qRev = catalog * listens * (rpm/1000) * share;
+    cumCost += qCost;
+    cumRev += qRev;
+    if(beQuarter === null && cumRev >= cumCost) beQuarter = q;
+    rows.push({q, qCost, qRev, cumRev, cumCost, catalog});
+  }
+
+  document.getElementById('s-catalog').textContent = fmt(catalog);
+  document.getElementById('s-rev-last').textContent = '₽' + fmt(rows[rows.length-1].qRev);
+  const profit = cumRev - cumCost;
+  const profitEl = document.getElementById('s-profit');
+  profitEl.textContent = (profit>=0?'+':'') + '₽' + fmt(profit);
+  profitEl.className = 'v ' + (profit>=0 ? 'good' : 'bad');
+  document.getElementById('s-profit-sub').textContent = 'за ' + Q + ' кв.';
+
+  const beEl = document.getElementById('s-be');
+  const beSub = document.getElementById('s-be-sub');
+  if(beQuarter){
+    beEl.textContent = 'кв. ' + beQuarter;
+    beEl.className = 'v good';
+    beSub.textContent = 'из ' + Q + ' на горизонте';
+  } else {
+    beEl.textContent = 'не наступит';
+    beEl.className = 'v bad';
+    beSub.textContent = 'на этом горизонте';
+  }
+
+  drawChart(rows, beQuarter);
+}
+
+function drawChart(rows, beQuarter){
+  const svg = document.getElementById('chart');
+  const W=640,H=260, padL=54, padB=30, padT=14, padR=10;
+  const plotW = W-padL-padR, plotH = H-padT-padB;
+  const n = rows.length;
+  const maxVal = Math.max(...rows.map(r=>Math.max(r.qCost,r.qRev)), 1);
+  const groupW = plotW/n;
+  const barW = Math.min(22, groupW*0.32);
+
+  let s = '';
+  // axes
+  s += `<line class="axis" x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+plotH}"/>`;
+  s += `<line class="axis" x1="${padL}" y1="${padT+plotH}" x2="${padL+plotW}" y2="${padT+plotH}"/>`;
+
+  // y gridlines/labels (4 steps)
+  for(let i=0;i<=4;i++){
+    const v = maxVal*i/4;
+    const y = padT+plotH - (v/maxVal)*plotH;
+    s += `<line class="axis" x1="${padL}" y1="${y}" x2="${padL+plotW}" y2="${y}" stroke-dasharray="2 3" opacity="0.5"/>`;
+    s += `<text class="axtext" x="${padL-8}" y="${y+3}" text-anchor="end">${fmt(v/1000)}k</text>`;
+  }
+
+  rows.forEach((r,i)=>{
+    const cx = padL + groupW*i + groupW/2;
+    const hCost = (r.qCost/maxVal)*plotH;
+    const hRev = (r.qRev/maxVal)*plotH;
+    const yBase = padT+plotH;
+    s += `<rect class="bar-cost" x="${cx-barW-2}" y="${yBase-hCost}" width="${barW}" height="${hCost}" rx="2"/>`;
+    s += `<rect class="bar-rev" x="${cx+2}" y="${yBase-hRev}" width="${barW}" height="${hRev}" rx="2"/>`;
+    s += `<text class="axtext" x="${cx}" y="${H-8}" text-anchor="middle">Q${r.q}</text>`;
+  });
+
+  if(beQuarter){
+    const cx = padL + groupW*(beQuarter-1) + groupW/2;
+    s += `<line class="be-line" x1="${cx}" y1="${padT}" x2="${cx}" y2="${padT+plotH}"/>`;
+    s += `<text class="be-label" x="${cx+6}" y="${padT+12}">break-even</text>`;
+  }
+
+  svg.innerHTML = s;
+}
+
+Object.values(els).forEach(el => el.addEventListener('input', compute));
+compute();
+</script>
+</body>
+</html>
